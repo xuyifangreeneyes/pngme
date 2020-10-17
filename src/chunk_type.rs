@@ -3,7 +3,7 @@ use std::str;
 use std::fmt;
 
 #[derive(Debug)]
-struct ChunkType {
+pub struct ChunkType {
     code: [u8; 4]
 }
 
@@ -56,27 +56,27 @@ impl PartialEq for ChunkType {
 }
 
 impl ChunkType {
-    fn bytes(&self) -> [u8; 4] {
+    pub fn bytes(&self) -> [u8; 4] {
         self.code
     }
 
-    fn is_valid(&self) -> bool {
+    pub fn is_valid(&self) -> bool {
         self.is_reserved_bit_valid()
     }
 
-    fn is_critical(&self) -> bool {
+    pub fn is_critical(&self) -> bool {
         self.code[0] & (1 << 5) == 0
     }
 
-    fn is_public(&self) -> bool {
+    pub fn is_public(&self) -> bool {
         self.code[1] & (1 << 5) == 0
     }
 
-    fn is_reserved_bit_valid(&self) -> bool {
+    pub fn is_reserved_bit_valid(&self) -> bool {
         self.code[2] & (1 << 5) == 0
     }
 
-    fn is_safe_to_copy(&self) -> bool {
+    pub fn is_safe_to_copy(&self) -> bool {
         self.code[3] & (1 << 5) != 0
     }
 
