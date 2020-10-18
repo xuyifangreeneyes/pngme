@@ -46,27 +46,43 @@ impl fmt::Display for Chunk {
 }
 
 impl Chunk {
-    fn length(&self) -> u32 {
+    pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
+        let length = data.len() as u32;
+        let crc_bytes : Vec<u8> = chunk_type.bytes()
+            .iter()
+            .chain(data.iter())
+            .copied()
+            .collect();
+        let crc = checksum_ieee(&crc_bytes);
+        Chunk { 
+            length: length, 
+            chunk_type: chunk_type,
+            data: data,
+            crc: crc
+        }
+    }
+
+    pub fn length(&self) -> u32 {
         self.length
     }
 
-    fn chunk_type(&self) -> &ChunkType {
+    pub fn chunk_type(&self) -> &ChunkType {
         &self.chunk_type
     }
 
-    fn data(&self) -> &[u8] {
+    pub fn data(&self) -> &[u8] {
         &self.data
     }
 
-    fn crc(&self) -> u32 {
+    pub fn crc(&self) -> u32 {
         self.crc
     }
 
-    fn data_as_string(&self) -> Result<String, FromUtf8Error> {
+    pub fn data_as_string(&self) -> Result<String, FromUtf8Error> {
         String::from_utf8(self.data().to_vec())
     }
 
-    fn as_bytes(&self) -> Vec<u8> {
+    pub fn as_bytes(&self) -> Vec<u8> {
         self.length
             .to_be_bytes()
             .iter()
@@ -81,8 +97,6 @@ impl Chunk {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::chunk_type::ChunkType;
-    use std::str::FromStr;
 
     fn testing_chunk() -> Chunk {
         let data_length: u32 = 42;
