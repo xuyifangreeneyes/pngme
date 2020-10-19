@@ -8,3 +8,6 @@ edition = "2018"
 
 [dependencies]
 crc = "^1.0.0"
+clap = "^2.33.0"
+structopt = "^0.3.20"
+anyhow = "^1.0.33"

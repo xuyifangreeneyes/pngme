@@ -1,10 +1,11 @@
+use anyhow::{anyhow, Error, Result};
 use std::convert::{TryFrom, TryInto};
-use std::str;
 use std::fmt;
+use std::str;
 
 #[derive(Debug)]
 pub struct ChunkType {
-    code: [u8; 4]
+    code: [u8; 4],
 }
 
 fn all_letters(bytes: &[u8]) -> bool {
@@ -17,11 +18,13 @@ fn all_letters(bytes: &[u8]) -> bool {
 }
 
 impl TryFrom<[u8; 4]> for ChunkType {
-    type Error = &'static str;
+    type Error = Error;
 
-    fn try_from(value: [u8; 4]) -> Result<Self, Self::Error> {
+    fn try_from(value: [u8; 4]) -> Result<Self> {
         if !all_letters(&value) {
-            Err("Chunk type codes must consist of uppercase and lowercase ASCII letters!")
+            Err(anyhow!(
+                "Chunk type codes must consist of uppercase and lowercase ASCII letters!"
+            ))
         } else {
             Ok(ChunkType { code: value })
         }
@@ -29,16 +32,20 @@ impl TryFrom<[u8; 4]> for ChunkType {
 }
 
 impl str::FromStr for ChunkType {
-    type Err = &'static str;
+    type Err = Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         let bytes = s.as_bytes();
         if bytes.len() != 4 {
-            Err("Chunk type code must be 4-byte!")
+            Err(anyhow!("Chunk type code must be 4-byte!"))
         } else if !all_letters(bytes) {
-            Err("Chunk type codes must consist of uppercase and lowercase ASCII letters!")
+            Err(anyhow!(
+                "Chunk type codes must consist of uppercase and lowercase ASCII letters!"
+            ))
         } else {
-            Ok(ChunkType { code: bytes.try_into().expect("slice with incorrect length") })
+            Ok(ChunkType {
+                code: bytes.try_into().expect("slice with incorrect length"),
+            })
         }
     }
 }
@@ -61,7 +68,7 @@ impl ChunkType {
     }
 
     pub fn is_valid(&self) -> bool {
-        self.is_reserved_bit_valid()
+        self.is_reserved_bit_valid() && (!self.is_critical() || !self.is_safe_to_copy())
     }
 
     pub fn is_critical(&self) -> bool {
@@ -79,11 +86,7 @@ impl ChunkType {
     pub fn is_safe_to_copy(&self) -> bool {
         self.code[3] & (1 << 5) != 0
     }
-
-
 }
-
-
 
 #[cfg(test)]
 mod tests {

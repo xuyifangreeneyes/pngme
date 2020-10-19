@@ -1,64 +1,71 @@
-use std::fmt;
-use std::vec::Vec;
-use std::string::{String, FromUtf8Error};
-use std::convert::{TryFrom, TryInto};
-use crc::crc32::checksum_ieee;
 use crate::chunk_type::ChunkType;
+use anyhow::{anyhow, Error, Result};
+use crc::crc32::checksum_ieee;
+use std::convert::{TryFrom, TryInto};
+use std::fmt;
+use std::string::{FromUtf8Error, String};
+use std::vec::Vec;
 
 #[derive(Debug)]
 pub struct Chunk {
     length: u32,
     chunk_type: ChunkType,
     data: Vec<u8>,
-    crc: u32
+    crc: u32,
 }
 
 impl TryFrom<&[u8]> for Chunk {
-    type Error = &'static str;
+    type Error = Error;
 
-    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+    fn try_from(value: &[u8]) -> Result<Self> {
         let length = u32::from_be_bytes(value[0..4].try_into().unwrap());
         let chunk_type: [u8; 4] = value[4..8].try_into().unwrap();
         let chunk_type = ChunkType::try_from(chunk_type).unwrap();
         if !chunk_type.is_valid() {
-            return Err("invalid chunk type");
+            return Err(anyhow!("invalid chunk type"));
         }
-        let data: Vec<u8> = Vec::from(&value[8..value.len()-4]);
-        let crc = u32::from_be_bytes(value[value.len()-4..].try_into().unwrap());
-        if crc != checksum_ieee(&value[4..value.len()-4]) {
-            return Err("wrong crc");
+        let data: Vec<u8> = Vec::from(&value[8..value.len() - 4]);
+        let crc = u32::from_be_bytes(value[value.len() - 4..].try_into().unwrap());
+        if crc != checksum_ieee(&value[4..value.len() - 4]) {
+            return Err(anyhow!("wrong crc"));
         }
         Ok(Chunk {
             length: length,
             chunk_type: chunk_type,
             data: data,
-            crc: crc
+            crc: crc,
         })
     }
 }
 
 impl fmt::Display for Chunk {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Chunk {{ length={length} chunk_type={chunk_type} data={data:?} crc={crc} }}",
-               length=self.length, chunk_type=self.chunk_type(),
-               data=self.data, crc=self.crc)
+        write!(
+            f,
+            "Chunk {{ length={length} chunk_type={chunk_type} data={data:?} crc={crc} }}",
+            length = self.length,
+            chunk_type = self.chunk_type(),
+            data = self.data,
+            crc = self.crc
+        )
     }
 }
 
 impl Chunk {
     pub fn new(chunk_type: ChunkType, data: Vec<u8>) -> Chunk {
         let length = data.len() as u32;
-        let crc_bytes : Vec<u8> = chunk_type.bytes()
+        let crc_bytes: Vec<u8> = chunk_type
+            .bytes()
             .iter()
             .chain(data.iter())
             .copied()
             .collect();
         let crc = checksum_ieee(&crc_bytes);
-        Chunk { 
-            length: length, 
+        Chunk {
+            length: length,
             chunk_type: chunk_type,
             data: data,
-            crc: crc
+            crc: crc,
         }
     }
 
@@ -112,7 +119,7 @@ mod tests {
             .chain(crc.to_be_bytes().iter())
             .copied()
             .collect();
-        
+
         Chunk::try_from(chunk_data.as_ref()).unwrap()
     }
 
@@ -205,9 +212,9 @@ mod tests {
             .chain(crc.to_be_bytes().iter())
             .copied()
             .collect();
-        
+
         let chunk: Chunk = TryFrom::try_from(chunk_data.as_ref()).unwrap();
-        
+
         let _chunk_string = format!("{}", chunk);
     }
 }

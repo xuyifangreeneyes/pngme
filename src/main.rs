@@ -4,31 +4,20 @@ mod chunk_type;
 mod commands;
 mod png;
 
+use structopt::StructOpt;
+use anyhow::{Result};
 
-pub type Error = Box<dyn std::error::Error>;
-pub type Result<T> = std::result::Result<T, Error>;
+use args::PngMeArgs;
+use commands::{encode, decode, remove, print};
+
 
 fn main() -> Result<()> {
-    // todo!()
-    let mut a : [u8; 4] = [2, 3, 4, 5];
-    let _b = a;
-    a[0] = 6;
-    for x in a.into_iter() {
-        println!("{}", x);
+    let args = PngMeArgs::from_args();
+    println!("{:?}", args);
+    match args {
+        PngMeArgs::Encode(encode_args) => encode(encode_args),
+        PngMeArgs::Decode(decode_args) => decode(decode_args),
+        PngMeArgs::Remove(remove_args) => remove(remove_args),
+        PngMeArgs::Print(print_args) => print(print_args),
     }
-    a[1] = 9;
-    // println!("fefe{:?}", str::from_utf8(&b).unwrap());
-    // println!("{}", b);
-
-    use std::str;
-
-    // some bytes, in a stack-allocated array
-    let sparkle_heart : [u8; 4] = [240, 159, 146, 150];
-
-    // We know these bytes are valid, so just use `unwrap()`.
-    let sparkle_heart = str::from_utf8(&sparkle_heart).unwrap();
-
-    assert_eq!("💖", sparkle_heart);
-    println!("cerer{}", sparkle_heart);
-    Ok(())
 }
